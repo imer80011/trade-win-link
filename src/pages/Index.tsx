@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, Users, ListChecks, Gift } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, Users, ListChecks, Gift, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -81,6 +81,7 @@ export default function Index() {
           { to: "/tasks", icon: ListChecks, label: "المهام اليومية", desc: "أكمل مهامك واربح مكافآت" },
           { to: "/team", icon: Users, label: "فريقك", desc: "12 عضو في فريقك" },
           { to: "/gifts", icon: Gift, label: "الهدايا", desc: "3 هدايا متاحة" },
+          { to: "/transactions", icon: History, label: "سجل المعاملات", desc: "عرض تاريخ الإيداعات والصفقات" },
         ].map((item, i) => (
           <motion.div
             key={item.to}
