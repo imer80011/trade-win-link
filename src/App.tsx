@@ -13,6 +13,7 @@ import Gifts from "./pages/Gifts";
 import Deposit from "./pages/Deposit";
 import Withdraw from "./pages/Withdraw";
 import Referral from "./pages/Referral";
+import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
