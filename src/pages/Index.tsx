@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, Users, ListChecks, Gift } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, Users, ListChecks, Gift, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
