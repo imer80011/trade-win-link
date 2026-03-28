@@ -37,6 +37,7 @@ const App = () => (
             <Route path="/withdraw" element={<Withdraw />} />
             <Route path="/referral" element={<Referral />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
