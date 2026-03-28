@@ -1,4 +1,4 @@
-import { Bell, Wallet } from "lucide-react";
+import { Bell, Wallet, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AppHeader() {
@@ -15,6 +15,9 @@ export default function AppHeader() {
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full" />
           </button>
+          <Link to="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
+            <User className="h-5 w-5" />
+          </Link>
         </div>
       </div>
     </header>
