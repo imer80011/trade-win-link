@@ -1,4 +1,4 @@
-import { Bell, Wallet } from "lucide-react";
+import { Bell, Wallet, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AppHeader() {
