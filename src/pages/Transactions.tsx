@@ -1,30 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, Filter } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type TransactionType = "all" | "deposit" | "withdraw" | "trade";
-
-interface Transaction {
-  id: string;
-  type: "deposit" | "withdraw" | "buy" | "sell";
-  amount: number;
-  date: string;
-  status: "completed" | "pending" | "failed";
-  detail: string;
-}
-
-const transactions: Transaction[] = [
-  { id: "1", type: "buy", amount: 85.00, date: "2026-03-28 14:32", status: "completed", detail: "BTC/USDT - Long 10x" },
-  { id: "2", type: "deposit", amount: 500.00, date: "2026-03-28 12:10", status: "completed", detail: "USDT (TRC20)" },
-  { id: "3", type: "sell", amount: 42.50, date: "2026-03-27 22:45", status: "completed", detail: "ETH/USDT - Short 20x" },
-  { id: "4", type: "withdraw", amount: 200.00, date: "2026-03-27 18:00", status: "pending", detail: "USDT (TRC20)" },
-  { id: "5", type: "buy", amount: 150.00, date: "2026-03-27 10:15", status: "completed", detail: "SOL/USDT - Long 5x" },
-  { id: "6", type: "deposit", amount: 1000.00, date: "2026-03-26 09:00", status: "completed", detail: "تحويل بنكي" },
-  { id: "7", type: "sell", amount: 60.00, date: "2026-03-26 08:20", status: "failed", detail: "BNB/USDT - Short 10x" },
-  { id: "8", type: "withdraw", amount: 300.00, date: "2026-03-25 16:30", status: "completed", detail: "بطاقة ائتمان" },
-  { id: "9", type: "buy", amount: 220.00, date: "2026-03-25 11:00", status: "completed", detail: "BTC/USDT - Long 50x" },
-  { id: "10", type: "deposit", amount: 250.00, date: "2026-03-24 14:00", status: "completed", detail: "USDT (TRC20)" },
-];
 
 const filters: { label: string; value: TransactionType }[] = [
   { label: "الكل", value: "all" },
@@ -33,45 +14,55 @@ const filters: { label: string; value: TransactionType }[] = [
   { label: "صفقات", value: "trade" },
 ];
 
-const iconMap = {
+const iconMap: Record<string, any> = {
   deposit: ArrowDownLeft,
   withdraw: ArrowUpRight,
-  buy: TrendingUp,
-  sell: TrendingDown,
+  trade: TrendingUp,
 };
 
-const colorMap = {
+const colorMap: Record<string, string> = {
   deposit: "text-primary bg-primary/10",
   withdraw: "text-accent bg-accent/10",
-  buy: "text-primary bg-primary/10",
-  sell: "text-danger bg-danger/10",
+  trade: "text-primary bg-primary/10",
 };
 
-const statusMap = {
+const statusMap: Record<string, { label: string; class: string }> = {
   completed: { label: "مكتمل", class: "text-primary bg-primary/10" },
   pending: { label: "قيد المعالجة", class: "text-warning bg-warning/10" },
   failed: { label: "فشل", class: "text-danger bg-danger/10" },
 };
 
-const typeLabel = {
+const typeLabel: Record<string, string> = {
   deposit: "إيداع",
   withdraw: "سحب",
-  buy: "شراء",
-  sell: "بيع",
+  trade: "صفقة",
 };
 
 export default function Transactions() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<TransactionType>("all");
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["transactions", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const filtered = transactions.filter((t) => {
     if (filter === "all") return true;
-    if (filter === "trade") return t.type === "buy" || t.type === "sell";
     return t.type === filter;
   });
 
-  const totalDeposits = transactions.filter(t => t.type === "deposit" && t.status === "completed").reduce((s, t) => s + t.amount, 0);
-  const totalWithdraws = transactions.filter(t => t.type === "withdraw" && t.status === "completed").reduce((s, t) => s + t.amount, 0);
-  const totalTrades = transactions.filter(t => (t.type === "buy" || t.type === "sell") && t.status === "completed").length;
+  const totalDeposits = transactions.filter(t => t.type === "deposit" && t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
+  const totalWithdraws = transactions.filter(t => t.type === "withdraw" && t.status === "completed").reduce((s, t) => s + Number(t.amount), 0);
+  const totalTrades = transactions.filter(t => t.type === "trade" && t.status === "completed").length;
 
   return (
     <div className="pb-20 px-4 max-w-lg mx-auto space-y-4 pt-4" dir="rtl">
@@ -116,39 +107,47 @@ export default function Transactions() {
 
       {/* List */}
       <div className="space-y-2">
-        {filtered.map((t, i) => {
-          const Icon = iconMap[t.type];
-          const color = colorMap[t.type];
-          const status = statusMap[t.status];
-          const isIncome = t.type === "deposit" || t.type === "buy";
+        {isLoading ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">جاري التحميل...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">لا توجد معاملات بعد</div>
+        ) : (
+          filtered.map((t, i) => {
+            const Icon = iconMap[t.type] || TrendingUp;
+            const color = colorMap[t.type] || "text-primary bg-primary/10";
+            const status = statusMap[t.status] || statusMap.pending;
+            const isIncome = t.type === "deposit";
 
-          return (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className="glass-card p-3 flex items-center gap-3"
-            >
-              <div className={`p-2 rounded-lg ${color}`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold">{typeLabel[t.type]}</p>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${status.class}`}>
-                    {status.label}
-                  </span>
+            return (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="glass-card p-3 flex items-center gap-3"
+              >
+                <div className={`p-2 rounded-lg ${color}`}>
+                  <Icon className="h-4 w-4" />
                 </div>
-                <p className="text-[11px] text-muted-foreground truncate">{t.detail}</p>
-                <p className="text-[10px] text-muted-foreground/60 font-mono">{t.date}</p>
-              </div>
-              <p className={`font-mono font-bold text-sm ${isIncome ? "text-primary" : "text-danger"}`}>
-                {isIncome ? "+" : "-"}${t.amount.toFixed(2)}
-              </p>
-            </motion.div>
-          );
-        })}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{typeLabel[t.type] || t.type}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${status.class}`}>
+                      {status.label}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate">{t.detail}</p>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono">
+                    {new Date(t.created_at).toLocaleString("ar-EG")}
+                  </p>
+                </div>
+                <p className={`font-mono font-bold text-sm ${isIncome ? "text-primary" : "text-danger"}`}>
+                  {isIncome ? "+" : "-"}${Number(t.amount).toFixed(2)}
+                </p>
+              </motion.div>
+            );
+          })
+        )}
       </div>
     </div>
   );
