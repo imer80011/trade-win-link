@@ -1,7 +1,11 @@
 import { Bell, Wallet, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function AppHeader() {
+  const { data: profile } = useProfile();
+  const balance = profile?.balance ?? 0;
+
   return (
     <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
@@ -9,7 +13,7 @@ export default function AppHeader() {
         <div className="flex items-center gap-3">
           <Link to="/deposit" className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-3 py-1.5 text-sm font-semibold">
             <Wallet className="h-4 w-4" />
-            <span>$1,250.00</span>
+            <span>${Number(balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
           </Link>
           <button className="relative text-muted-foreground hover:text-foreground transition-colors">
             <Bell className="h-5 w-5" />

@@ -1,6 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, Users, ListChecks, Gift, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useProfile } from "@/hooks/useProfile";
 
 const quickActions = [
   { to: "/deposit", icon: ArrowDownLeft, label: "إيداع", color: "bg-primary/10 text-primary" },
@@ -9,14 +10,20 @@ const quickActions = [
   { to: "/referral", icon: Users, label: "إحالة", color: "bg-warning/10 text-warning" },
 ];
 
-const stats = [
-  { label: "الأرباح اليوم", value: "$32.50", change: "+2.6%" },
-  { label: "إجمالي الأرباح", value: "$1,890.00", change: "+18.4%" },
-  { label: "الإحالات", value: "12", change: "+3" },
-  { label: "المهام المكتملة", value: "5/7", change: "71%" },
-];
-
 export default function Index() {
+  const { data: profile } = useProfile();
+  const balance = Number(profile?.balance ?? 0);
+  const totalProfits = Number(profile?.total_profits ?? 0);
+  const totalReferrals = profile?.total_referrals ?? 0;
+  const displayName = profile?.display_name || "مستخدم";
+
+  const stats = [
+    { label: "الأرباح اليوم", value: "$0.00", change: "---" },
+    { label: "إجمالي الأرباح", value: `$${totalProfits.toLocaleString()}`, change: "---" },
+    { label: "الإحالات", value: String(totalReferrals), change: "---" },
+    { label: "المهام المكتملة", value: "0/7", change: "0%" },
+  ];
+
   return (
     <div className="pb-20 px-4 max-w-lg mx-auto space-y-5 pt-4" dir="rtl">
       {/* Welcome */}
@@ -25,14 +32,11 @@ export default function Index() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-card p-5 glow-border"
       >
-        <p className="text-muted-foreground text-sm">مرحباً بك 👋</p>
+        <p className="text-muted-foreground text-sm">مرحباً بك {displayName} 👋</p>
         <h2 className="text-xl font-bold mt-1">الرصيد الإجمالي</h2>
-        <p className="text-3xl font-mono font-bold gradient-text mt-2">$1,250.00</p>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-            +$32.50 اليوم
-          </span>
-        </div>
+        <p className="text-3xl font-mono font-bold gradient-text mt-2">
+          ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+        </p>
       </motion.div>
 
       {/* Quick Actions */}
