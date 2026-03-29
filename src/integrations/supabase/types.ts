@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          balance: number | null
+          created_at: string
+          display_name: string | null
+          id: string
+          referral_code: string | null
+          referred_by: string | null
+          total_deposits: number | null
+          total_profits: number | null
+          total_referrals: number | null
+          total_trades: number | null
+          updated_at: string
+          user_id: string
+          vip_level: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          balance?: number | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_by?: string | null
+          total_deposits?: number | null
+          total_profits?: number | null
+          total_referrals?: number | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id: string
+          vip_level?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          balance?: number | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_by?: string | null
+          total_deposits?: number | null
+          total_profits?: number | null
+          total_referrals?: number | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id?: string
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
