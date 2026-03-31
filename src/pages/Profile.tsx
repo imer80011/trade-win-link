@@ -7,6 +7,8 @@ import {
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useNavigate } from "react-router-dom";
 
 const vipLevels = [
   { level: 0, name: "عادي", min: 0, max: 500, color: "text-muted-foreground", bg: "bg-muted" },
