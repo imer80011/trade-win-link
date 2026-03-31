@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import TradingChart from "@/components/TradingChart";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const pairs = ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT"];
 
@@ -10,15 +13,31 @@ export default function Trading() {
   const [amount, setAmount] = useState("");
   const [selectedPair, setSelectedPair] = useState(0);
   const [leverage, setLeverage] = useState("10");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleTrade = () => {
+  const handleTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("الرجاء إدخال مبلغ صحيح");
       return;
     }
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
     const profit = parseFloat(amount) * (Math.random() * 0.15 + 0.02);
+    setLoading(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "trade",
+      amount: parseFloat(amount),
+      status: "completed",
+      detail: `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | رافعة ${leverage}x | ربح: $${profit.toFixed(2)}`,
+    });
+    setLoading(false);
+    if (error) { toast.error("حدث خطأ أثناء تسجيل الصفقة"); return; }
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success(
-      `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح المتوقع: $${profit.toFixed(2)}`,
+      `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح: $${profit.toFixed(2)}`,
       { duration: 4000 }
     );
     setAmount("");
@@ -141,13 +160,14 @@ export default function Trading() {
         {/* Trade Button */}
         <button
           onClick={handleTrade}
-          className={`w-full py-3.5 rounded-lg font-bold text-sm transition-all ${
+          disabled={loading}
+          className={`w-full py-3.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50 ${
             activeTab === "buy"
               ? "bg-primary text-primary-foreground hover:brightness-110"
               : "bg-danger text-foreground hover:brightness-110"
           }`}
         >
-          {activeTab === "buy" ? "شراء الآن" : "بيع الآن"}
+          {loading ? "جاري التنفيذ..." : activeTab === "buy" ? "شراء الآن" : "بيع الآن"}
         </button>
       </motion.div>
     </div>

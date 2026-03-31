@@ -2,6 +2,10 @@ import { motion } from "framer-motion";
 import { Wallet, CreditCard, Building2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/useProfile";
 
 const methods = [
   { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 20, fee: "$1", time: "10-30 دقيقة" },
@@ -13,9 +17,13 @@ export default function Withdraw() {
   const [selectedMethod, setSelectedMethod] = useState("usdt");
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
-  const balance = 1250;
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
+  const balance = profile?.balance ?? 0;
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const method = methods.find((m) => m.id === selectedMethod)!;
     if (!amount || parseFloat(amount) < method.min) {
       toast.error(`الحد الأدنى للسحب: $${method.min}`);
@@ -29,6 +37,19 @@ export default function Withdraw() {
       toast.error("الرجاء إدخال عنوان المحفظة");
       return;
     }
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
+    setLoading(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "withdraw",
+      amount: parseFloat(amount),
+      status: "pending",
+      detail: `سحب عبر ${method.name}${address ? ` - ${address}` : ""}`,
+    });
+    setLoading(false);
+    if (error) { toast.error("حدث خطأ أثناء تسجيل السحب"); return; }
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success(`تم إرسال طلب السحب! الوقت المتوقع: ${method.time}`);
     setAmount("");
     setAddress("");
@@ -113,9 +134,10 @@ export default function Withdraw() {
 
         <button
           onClick={handleWithdraw}
-          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all"
+          disabled={loading}
+          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          تأكيد السحب
+          {loading ? "جاري الإرسال..." : "تأكيد السحب"}
         </button>
       </motion.div>
     </div>

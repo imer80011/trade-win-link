@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { Copy, CreditCard, Wallet, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const methods = [
   { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 10, fee: "0%" },
@@ -12,12 +15,29 @@ const methods = [
 export default function Deposit() {
   const [selectedMethod, setSelectedMethod] = useState("usdt");
   const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleDeposit = () => {
-    if (!amount || parseFloat(amount) < methods.find((m) => m.id === selectedMethod)!.min) {
-      toast.error(`الحد الأدنى للإيداع: $${methods.find((m) => m.id === selectedMethod)!.min}`);
+  const handleDeposit = async () => {
+    const method = methods.find((m) => m.id === selectedMethod)!;
+    if (!amount || parseFloat(amount) < method.min) {
+      toast.error(`الحد الأدنى للإيداع: $${method.min}`);
       return;
     }
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
+    setLoading(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "deposit",
+      amount: parseFloat(amount),
+      status: "pending",
+      detail: `إيداع عبر ${method.name}`,
+    });
+    setLoading(false);
+    if (error) { toast.error("حدث خطأ أثناء تسجيل الإيداع"); return; }
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success("تم إرسال طلب الإيداع بنجاح! سيتم تأكيده خلال دقائق.");
     setAmount("");
   };
@@ -107,9 +127,10 @@ export default function Deposit() {
 
         <button
           onClick={handleDeposit}
-          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all"
+          disabled={loading}
+          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          تأكيد الإيداع
+          {loading ? "جاري الإرسال..." : "تأكيد الإيداع"}
         </button>
       </motion.div>
     </div>
