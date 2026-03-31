@@ -7,6 +7,8 @@ import {
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useNavigate } from "react-router-dom";
 
 const vipLevels = [
   { level: 0, name: "عادي", min: 0, max: 500, color: "text-muted-foreground", bg: "bg-muted" },
@@ -190,6 +192,7 @@ export default function Profile() {
         <SettingRow icon={Lock} label="تغيير كلمة المرور" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
         <SettingRow icon={Shield} label="التحقق من الهوية" badge="غير مكتمل" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
         <SettingRow icon={Globe} label="اللغة" value="العربية" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
+        <AdminLink />
         <SettingRow icon={LogOut} label="تسجيل الخروج" danger onClick={handleSignOut} />
       </motion.div>
 
@@ -216,6 +219,19 @@ function SettingRow({ icon: Icon, label, toggle, checked, onChange, onClick, val
         </div>
       )}
       {!toggle && !badge && !value && <ChevronLeft className="h-4 w-4 text-muted-foreground" />}
+    </button>
+  );
+}
+
+function AdminLink() {
+  const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
+  if (!isAdmin) return null;
+  return (
+    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+      <Shield className="h-4 w-4 text-primary" />
+      <span className="text-sm flex-1 text-right text-primary font-semibold">لوحة الإدارة</span>
+      <ChevronLeft className="h-4 w-4 text-primary" />
     </button>
   );
 }
