@@ -192,6 +192,7 @@ export default function Profile() {
         <SettingRow icon={Lock} label="تغيير كلمة المرور" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
         <SettingRow icon={Shield} label="التحقق من الهوية" badge="غير مكتمل" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
         <SettingRow icon={Globe} label="اللغة" value="العربية" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
+        <AdminLink />
         <SettingRow icon={LogOut} label="تسجيل الخروج" danger onClick={handleSignOut} />
       </motion.div>
 
