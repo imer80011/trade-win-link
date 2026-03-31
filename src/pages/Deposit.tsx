@@ -15,12 +15,29 @@ const methods = [
 export default function Deposit() {
   const [selectedMethod, setSelectedMethod] = useState("usdt");
   const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleDeposit = () => {
-    if (!amount || parseFloat(amount) < methods.find((m) => m.id === selectedMethod)!.min) {
-      toast.error(`الحد الأدنى للإيداع: $${methods.find((m) => m.id === selectedMethod)!.min}`);
+  const handleDeposit = async () => {
+    const method = methods.find((m) => m.id === selectedMethod)!;
+    if (!amount || parseFloat(amount) < method.min) {
+      toast.error(`الحد الأدنى للإيداع: $${method.min}`);
       return;
     }
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
+    setLoading(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "deposit",
+      amount: parseFloat(amount),
+      status: "pending",
+      detail: `إيداع عبر ${method.name}`,
+    });
+    setLoading(false);
+    if (error) { toast.error("حدث خطأ أثناء تسجيل الإيداع"); return; }
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success("تم إرسال طلب الإيداع بنجاح! سيتم تأكيده خلال دقائق.");
     setAmount("");
   };
