@@ -160,13 +160,14 @@ export default function Trading() {
         {/* Trade Button */}
         <button
           onClick={handleTrade}
-          className={`w-full py-3.5 rounded-lg font-bold text-sm transition-all ${
+          disabled={loading}
+          className={`w-full py-3.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50 ${
             activeTab === "buy"
               ? "bg-primary text-primary-foreground hover:brightness-110"
               : "bg-danger text-foreground hover:brightness-110"
           }`}
         >
-          {activeTab === "buy" ? "شراء الآن" : "بيع الآن"}
+          {loading ? "جاري التنفيذ..." : activeTab === "buy" ? "شراء الآن" : "بيع الآن"}
         </button>
       </motion.div>
     </div>

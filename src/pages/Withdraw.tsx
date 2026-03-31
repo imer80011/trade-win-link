@@ -134,9 +134,10 @@ export default function Withdraw() {
 
         <button
           onClick={handleWithdraw}
-          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all"
+          disabled={loading}
+          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          تأكيد السحب
+          {loading ? "جاري الإرسال..." : "تأكيد السحب"}
         </button>
       </motion.div>
     </div>

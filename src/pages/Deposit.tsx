@@ -127,9 +127,10 @@ export default function Deposit() {
 
         <button
           onClick={handleDeposit}
-          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all"
+          disabled={loading}
+          className="w-full bg-primary text-primary-foreground py-3.5 rounded-lg font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          تأكيد الإيداع
+          {loading ? "جاري الإرسال..." : "تأكيد الإيداع"}
         </button>
       </motion.div>
     </div>
