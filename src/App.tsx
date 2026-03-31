@@ -49,6 +49,7 @@ function ProtectedRoutes() {
         <Route path="/referral" element={<Referral />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />
