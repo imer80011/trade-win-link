@@ -13,15 +13,31 @@ export default function Trading() {
   const [amount, setAmount] = useState("");
   const [selectedPair, setSelectedPair] = useState(0);
   const [leverage, setLeverage] = useState("10");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleTrade = () => {
+  const handleTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("الرجاء إدخال مبلغ صحيح");
       return;
     }
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
     const profit = parseFloat(amount) * (Math.random() * 0.15 + 0.02);
+    setLoading(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "trade",
+      amount: parseFloat(amount),
+      status: "completed",
+      detail: `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | رافعة ${leverage}x | ربح: $${profit.toFixed(2)}`,
+    });
+    setLoading(false);
+    if (error) { toast.error("حدث خطأ أثناء تسجيل الصفقة"); return; }
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success(
-      `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح المتوقع: $${profit.toFixed(2)}`,
+      `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح: $${profit.toFixed(2)}`,
       { duration: 4000 }
     );
     setAmount("");
