@@ -2,6 +2,10 @@ import { motion } from "framer-motion";
 import { Wallet, CreditCard, Building2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/useProfile";
 
 const methods = [
   { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 20, fee: "$1", time: "10-30 دقيقة" },
