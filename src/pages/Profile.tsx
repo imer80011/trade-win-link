@@ -222,3 +222,16 @@ function SettingRow({ icon: Icon, label, toggle, checked, onChange, onClick, val
     </button>
   );
 }
+
+function AdminLink() {
+  const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
+  if (!isAdmin) return null;
+  return (
+    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+      <Shield className="h-4 w-4 text-primary" />
+      <span className="text-sm flex-1 text-right text-primary font-semibold">لوحة الإدارة</span>
+      <ChevronLeft className="h-4 w-4 text-primary" />
+    </button>
+  );
+}
