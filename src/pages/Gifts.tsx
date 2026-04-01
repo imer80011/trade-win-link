@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { Gift, Star, Clock, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface GiftItem {
   id: number;
@@ -25,17 +28,31 @@ const initialGifts: GiftItem[] = [
 
 export default function Gifts() {
   const [gifts, setGifts] = useState(initialGifts);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const claimGift = (id: number) => {
-    setGifts((prev) =>
-      prev.map((g) => {
-        if (g.id === id && g.available && !g.claimed) {
-          toast.success(`تم الحصول على $${g.reward.toFixed(2)}! 🎉`);
-          return { ...g, claimed: true };
-        }
-        return g;
-      })
-    );
+  const claimGift = async (id: number) => {
+    const gift = gifts.find((g) => g.id === id);
+    if (!gift || !gift.available || gift.claimed) return;
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
+
+    setLoadingId(id);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "reward",
+      amount: gift.reward,
+      status: "completed",
+      detail: `هدية: ${gift.title}`,
+    });
+    setLoadingId(null);
+
+    if (error) { toast.error("حدث خطأ أثناء استلام الهدية"); return; }
+
+    setGifts((prev) => prev.map((g) => g.id === id ? { ...g, claimed: true } : g));
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    toast.success(`تم الحصول على $${gift.reward.toFixed(2)}! 🎉`);
   };
 
   const totalClaimed = gifts.filter((g) => g.claimed).reduce((a, g) => a + g.reward, 0);
@@ -94,9 +111,10 @@ export default function Gifts() {
               ) : gift.available ? (
                 <button
                   onClick={() => claimGift(gift.id)}
-                  className="mt-1 text-xs bg-primary text-primary-foreground px-3 py-1 rounded-md font-semibold hover:brightness-110 transition-all"
+                  disabled={loadingId === gift.id}
+                  className="mt-1 text-xs bg-primary text-primary-foreground px-3 py-1 rounded-md font-semibold hover:brightness-110 transition-all disabled:opacity-50"
                 >
-                  استلام
+                  {loadingId === gift.id ? "..." : "استلام"}
                 </button>
               ) : (
                 <span className="text-xs text-muted-foreground">غير متاح</span>
