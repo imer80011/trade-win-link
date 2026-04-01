@@ -28,9 +28,9 @@ export default function Trading() {
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       type: "trade",
-      amount: parseFloat(amount),
+      amount: profit,
       status: "completed",
-      detail: `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | رافعة ${leverage}x | ربح: $${profit.toFixed(2)}`,
+      detail: `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | مبلغ: $${parseFloat(amount).toFixed(2)} | رافعة ${leverage}x | ربح: $${profit.toFixed(2)}`,
     });
     setLoading(false);
     if (error) { toast.error("حدث خطأ أثناء تسجيل الصفقة"); return; }
