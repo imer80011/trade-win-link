@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Clock, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Task {
   id: number;
@@ -25,17 +28,31 @@ const initialTasks: Task[] = [
 
 export default function Tasks() {
   const [tasks, setTasks] = useState(initialTasks);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const completeTask = (id: number) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === id && !t.completed) {
-          toast.success(`تم إكمال المهمة! +$${t.reward.toFixed(2)}`);
-          return { ...t, completed: true };
-        }
-        return t;
-      })
-    );
+  const completeTask = async (id: number) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task || task.completed) return;
+    if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
+
+    setLoadingId(id);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "reward",
+      amount: task.reward,
+      status: "completed",
+      detail: `مكافأة مهمة: ${task.title}`,
+    });
+    setLoadingId(null);
+
+    if (error) { toast.error("حدث خطأ أثناء تسجيل المكافأة"); return; }
+
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: true } : t));
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    toast.success(`تم إكمال المهمة! +$${task.reward.toFixed(2)}`);
   };
 
   const dailyTasks = tasks.filter((t) => t.type === "daily");
@@ -88,13 +105,15 @@ export default function Tasks() {
           >
             <button
               onClick={() => completeTask(task.id)}
-              disabled={task.completed}
+              disabled={task.completed || loadingId === task.id}
               className={`w-full glass-card p-4 flex items-center gap-3 text-right transition-all ${
                 task.completed ? "opacity-60" : "hover:border-primary/30"
               }`}
             >
               {task.completed ? (
                 <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+              ) : loadingId === task.id ? (
+                <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               )}
@@ -120,13 +139,15 @@ export default function Tasks() {
           >
             <button
               onClick={() => completeTask(task.id)}
-              disabled={task.completed}
+              disabled={task.completed || loadingId === task.id}
               className={`w-full glass-card p-4 flex items-center gap-3 text-right border-accent/20 transition-all ${
                 task.completed ? "opacity-60" : "hover:border-accent/40"
               }`}
             >
               {task.completed ? (
                 <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0" />
+              ) : loadingId === task.id ? (
+                <div className="h-5 w-5 border-2 border-accent border-t-transparent rounded-full animate-spin flex-shrink-0" />
               ) : (
                 <Circle className="h-5 w-5 text-accent/50 flex-shrink-0" />
               )}
