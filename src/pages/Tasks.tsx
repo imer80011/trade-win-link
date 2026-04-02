@@ -53,6 +53,8 @@ export default function Tasks() {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: true } : t));
     queryClient.invalidateQueries({ queryKey: ["profile"] });
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    await createNotification(user.id, "مكافأة مهمة", `تم إكمال "${task.title}" وحصلت على $${task.reward.toFixed(2)}`, "reward");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(`تم إكمال المهمة! +$${task.reward.toFixed(2)}`);
   };
 

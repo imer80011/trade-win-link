@@ -37,6 +37,8 @@ export default function Trading() {
     if (error) { toast.error("حدث خطأ أثناء تسجيل الصفقة"); return; }
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["profile"] });
+    await createNotification(user.id, "نتيجة صفقة", `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | ربح: $${profit.toFixed(2)} 📈`, "trade");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(
       `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح: $${profit.toFixed(2)}`,
       { duration: 4000 }
