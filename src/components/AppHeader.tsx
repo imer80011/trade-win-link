@@ -1,6 +1,7 @@
 import { Bell, Wallet, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
+import { useUnreadCount } from "@/hooks/useNotifications";
 
 export default function AppHeader() {
   const { data: profile } = useProfile();
