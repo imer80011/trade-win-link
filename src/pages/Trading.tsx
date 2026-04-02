@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { createNotification } from "@/hooks/useNotifications";
 
 const pairs = ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT"];
 
@@ -36,6 +37,8 @@ export default function Trading() {
     if (error) { toast.error("حدث خطأ أثناء تسجيل الصفقة"); return; }
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["profile"] });
+    await createNotification(user.id, "نتيجة صفقة", `${activeTab === "buy" ? "شراء" : "بيع"} ${pairs[selectedPair]} | ربح: $${profit.toFixed(2)} 📈`, "trade");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(
       `تم ${activeTab === "buy" ? "الشراء" : "البيع"} بنجاح! الربح: $${profit.toFixed(2)}`,
       { duration: 4000 }

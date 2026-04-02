@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { createNotification } from "@/hooks/useNotifications";
 
 interface Task {
   id: number;
@@ -52,6 +53,8 @@ export default function Tasks() {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: true } : t));
     queryClient.invalidateQueries({ queryKey: ["profile"] });
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    await createNotification(user.id, "مكافأة مهمة", `تم إكمال "${task.title}" وحصلت على $${task.reward.toFixed(2)}`, "reward");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(`تم إكمال المهمة! +$${task.reward.toFixed(2)}`);
   };
 

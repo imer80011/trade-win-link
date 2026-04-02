@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { createNotification } from "@/hooks/useNotifications";
 
 interface GiftItem {
   id: number;
@@ -52,6 +53,8 @@ export default function Gifts() {
     setGifts((prev) => prev.map((g) => g.id === id ? { ...g, claimed: true } : g));
     queryClient.invalidateQueries({ queryKey: ["profile"] });
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    await createNotification(user.id, "هدية جديدة", `تم استلام "${gift.title}" بقيمة $${gift.reward.toFixed(2)} 🎁`, "reward");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(`تم الحصول على $${gift.reward.toFixed(2)}! 🎉`);
   };
 
