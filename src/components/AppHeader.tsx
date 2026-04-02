@@ -6,6 +6,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 export default function AppHeader() {
   const { data: profile } = useProfile();
   const balance = profile?.balance ?? 0;
+  const unreadCount = useUnreadCount();
 
   return (
     <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border">
