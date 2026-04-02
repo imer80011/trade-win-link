@@ -17,10 +17,14 @@ export default function AppHeader() {
             <Wallet className="h-4 w-4" />
             <span>${Number(balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
           </Link>
-          <button className="relative text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full" />
-          </button>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary rounded-full text-[9px] text-primary-foreground flex items-center justify-center font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Link>
           <Link to="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
             <User className="h-5 w-5" />
           </Link>
