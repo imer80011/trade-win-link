@@ -1,17 +1,12 @@
 import { motion } from "framer-motion";
-import { Wallet, CreditCard, Building2, AlertCircle } from "lucide-react";
+import { Wallet, CreditCard, Building2, AlertCircle, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/useProfile";
-
-const methods = [
-  { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 20, fee: "$1", time: "10-30 دقيقة" },
-  { id: "card", name: "بطاقة ائتمان", icon: CreditCard, min: 50, fee: "3%", time: "1-3 أيام" },
-  { id: "bank", name: "تحويل بنكي", icon: Building2, min: 100, fee: "$5", time: "3-5 أيام" },
-];
+import { getVipLevel } from "@/lib/vipConfig";
 
 export default function Withdraw() {
   const [selectedMethod, setSelectedMethod] = useState("usdt");
@@ -23,6 +18,15 @@ export default function Withdraw() {
   const queryClient = useQueryClient();
   const balance = profile?.balance ?? 0;
 
+  const totalDeposits = Number(profile?.total_deposits ?? 0);
+  const vip = getVipLevel(totalDeposits);
+
+  const methods = [
+    { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 20, fee: "$1", time: "10-30 دقيقة" },
+    { id: "card", name: "بطاقة ائتمان", icon: CreditCard, min: 50, fee: "3%", time: "1-3 أيام" },
+    { id: "bank", name: "تحويل بنكي", icon: Building2, min: 100, fee: "$5", time: "3-5 أيام" },
+  ];
+
   const handleWithdraw = async () => {
     const method = methods.find((m) => m.id === selectedMethod)!;
     if (!amount || parseFloat(amount) < method.min) {
@@ -31,6 +35,10 @@ export default function Withdraw() {
     }
     if (parseFloat(amount) > balance) {
       toast.error("الرصيد غير كافي");
+      return;
+    }
+    if (parseFloat(amount) > vip.maxWithdrawDaily) {
+      toast.error(`حد السحب اليومي لمستوى VIP ${vip.level} هو $${vip.maxWithdrawDaily.toLocaleString()}`);
       return;
     }
     if (selectedMethod === "usdt" && !address) {
@@ -62,6 +70,18 @@ export default function Withdraw() {
         <p className="text-sm text-muted-foreground">
           الرصيد المتاح: <span className="font-mono text-primary font-semibold">${balance.toFixed(2)}</span>
         </p>
+      </motion.div>
+
+      {/* VIP Withdraw Limit Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg ${vip.bg} border border-primary/10`}
+      >
+        <Crown className={`h-4 w-4 ${vip.color}`} />
+        <span className="text-xs font-semibold">
+          حد السحب اليومي (VIP {vip.level}): <span className="text-primary font-mono">${vip.maxWithdrawDaily.toLocaleString()}</span>
+        </span>
       </motion.div>
 
       {/* Methods */}
@@ -109,6 +129,9 @@ export default function Withdraw() {
             placeholder="0.00"
             className="w-full bg-muted border border-border rounded-lg px-4 py-3 text-foreground font-mono text-lg focus:outline-none focus:border-primary/50 transition-colors"
           />
+          {amount && parseFloat(amount) > vip.maxWithdrawDaily && (
+            <p className="text-xs text-destructive mt-1">تجاوزت حد السحب اليومي (${ vip.maxWithdrawDaily.toLocaleString()})</p>
+          )}
         </div>
 
         {selectedMethod === "usdt" && (

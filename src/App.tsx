@@ -19,6 +19,7 @@ import Transactions from "./pages/Transactions";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Notifications from "./pages/Notifications";
+import Vip from "./pages/Vip";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function ProtectedRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/vip" element={<Vip />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />
