@@ -86,6 +86,7 @@ export default function Index() {
           { to: "/team", icon: Users, label: "فريقك", desc: "12 عضو في فريقك" },
           { to: "/gifts", icon: Gift, label: "الهدايا", desc: "3 هدايا متاحة" },
           { to: "/transactions", icon: History, label: "سجل المعاملات", desc: "عرض تاريخ الإيداعات والصفقات" },
+          { to: "/vip", icon: Crown, label: "مستوى VIP", desc: "اكتشف مزايا VIP وارتقِ بمستواك" },
         ].map((item, i) => (
           <motion.div
             key={item.to}
