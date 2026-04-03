@@ -53,6 +53,7 @@ function ProtectedRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/vip" element={<Vip />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />

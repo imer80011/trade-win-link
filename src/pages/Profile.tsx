@@ -9,21 +9,14 @@ import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useNavigate } from "react-router-dom";
-
-const vipLevels = [
-  { level: 0, name: "عادي", min: 0, max: 500, color: "text-muted-foreground", bg: "bg-muted" },
-  { level: 1, name: "برونزي", min: 500, max: 2000, color: "text-amber-600", bg: "bg-amber-600/10" },
-  { level: 2, name: "فضي", min: 2000, max: 5000, color: "text-slate-300", bg: "bg-slate-300/10" },
-  { level: 3, name: "ذهبي", min: 5000, max: 15000, color: "text-yellow-400", bg: "bg-yellow-400/10" },
-  { level: 4, name: "بلاتيني", min: 15000, max: 50000, color: "text-cyan-400", bg: "bg-cyan-400/10" },
-  { level: 5, name: "ماسي", min: 50000, max: Infinity, color: "text-primary", bg: "bg-primary/10" },
-];
+import { getVipLevel, getNextVipLevel, getVipProgress } from "@/lib/vipConfig";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const navigate = useNavigate();
 
   const totalDeposits = Number(profile?.total_deposits ?? 0);
   const totalProfits = Number(profile?.total_profits ?? 0);
@@ -32,13 +25,9 @@ export default function Profile() {
   const displayName = profile?.display_name || "مستخدم TradeX";
   const referralCode = profile?.referral_code || "---";
 
-  const currentVip = vipLevels.find(
-    (v) => totalDeposits >= v.min && totalDeposits < v.max
-  ) || vipLevels[0];
-  const nextVip = vipLevels[currentVip.level + 1];
-  const progress = nextVip
-    ? ((totalDeposits - currentVip.min) / (nextVip.min - currentVip.min)) * 100
-    : 100;
+  const currentVip = getVipLevel(totalDeposits);
+  const nextVip = getNextVipLevel(currentVip);
+  const progress = getVipProgress(totalDeposits, currentVip, nextVip);
 
   const copyId = () => {
     navigator.clipboard.writeText(referralCode);
@@ -79,10 +68,11 @@ export default function Profile() {
                 <Copy className="h-3 w-3" />
               </button>
             </div>
-            <div className={`flex items-center gap-1 mt-1.5 ${currentVip.color}`}>
+            <button onClick={() => navigate("/vip")} className={`flex items-center gap-1 mt-1.5 ${currentVip.color} hover:opacity-80 transition-opacity`}>
               <Crown className="h-3.5 w-3.5" />
               <span className="text-xs font-bold">VIP {currentVip.level} - {currentVip.name}</span>
-            </div>
+              <ChevronLeft className="h-3 w-3" />
+            </button>
           </div>
         </div>
       </motion.div>
@@ -92,7 +82,8 @@ export default function Profile() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="glass-card p-4 space-y-3"
+        className="glass-card p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-all"
+        onClick={() => navigate("/vip")}
       >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold flex items-center gap-2">
@@ -101,20 +92,9 @@ export default function Profile() {
           </h3>
           {nextVip && (
             <span className="text-[10px] text-muted-foreground">
-              المستوى التالي: <span className={nextVip.color + " font-bold"}>{nextVip.name}</span>
+              التالي: <span className={nextVip.color + " font-bold"}>{nextVip.name}</span>
             </span>
           )}
-        </div>
-
-        <div className="flex gap-1.5">
-          {vipLevels.map((v) => (
-            <div
-              key={v.level}
-              className={`flex-1 h-1.5 rounded-full transition-all ${
-                v.level <= currentVip.level ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          ))}
         </div>
 
         {nextVip && (
@@ -136,9 +116,9 @@ export default function Profile() {
 
         <div className="grid grid-cols-3 gap-2 pt-1">
           {[
-            { label: "عمولة تداول", value: `${(0.1 - currentVip.level * 0.015).toFixed(3)}%` },
-            { label: "حد السحب اليومي", value: `$${(1000 + currentVip.level * 2000).toLocaleString()}` },
-            { label: "مكافأة إحالة", value: `${10 + currentVip.level * 2}%` },
+            { label: "بونص ربح", value: `+${currentVip.profitBonus}%` },
+            { label: "حد السحب اليومي", value: `$${currentVip.maxWithdrawDaily.toLocaleString()}` },
+            { label: "مكافأة إحالة", value: `${currentVip.referralBonus}%` },
           ].map((b) => (
             <div key={b.label} className="bg-muted rounded-lg p-2 text-center">
               <p className="text-[9px] text-muted-foreground">{b.label}</p>
