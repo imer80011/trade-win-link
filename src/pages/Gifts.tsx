@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { Gift, Star, Clock, CheckCircle2, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { createNotification } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { getVipLevel } from "@/lib/vipConfig";
@@ -28,7 +28,6 @@ const initialGifts: GiftItem[] = [
   { id: 4, title: "قائد الفريق", description: "ادعُ 10 أصدقاء", reward: 50, requirement: "10 إحالات", claimed: false, available: false, icon: "star" },
   { id: 5, title: "مستثمر VIP", description: "إيداع $1,000 أو أكثر", reward: 100, requirement: "إيداع $1,000+", claimed: false, available: false, icon: "star" },
   { id: 6, title: "مكافأة شهرية", description: "ابق نشطاً لمدة 30 يوم", reward: 30, requirement: "30 يوم نشاط", claimed: false, available: false, icon: "gift" },
-  // VIP Exclusive Gifts
   { id: 7, title: "هدية VIP الذهبية", description: "هدية حصرية لأعضاء VIP الذهبي", reward: 75, requirement: "VIP 3+", claimed: false, available: true, icon: "crown", minVipLevel: 3 },
   { id: 8, title: "بونص VIP البلاتيني", description: "بونص خاص لأعضاء البلاتينيوم", reward: 200, requirement: "VIP 4+", claimed: false, available: true, icon: "crown", minVipLevel: 4 },
   { id: 9, title: "جائزة VIP الماسية", description: "الجائزة الكبرى لأعضاء الماسي", reward: 500, requirement: "VIP 5", claimed: false, available: true, icon: "crown", minVipLevel: 5 },
@@ -44,6 +43,33 @@ export default function Gifts() {
   const totalDeposits = Number(profile?.total_deposits ?? 0);
   const vip = getVipLevel(totalDeposits);
 
+  // Load claimed gifts from DB
+  const { data: claimedGifts } = useQuery({
+    queryKey: ["claimed-gifts", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("claimed_rewards")
+        .select("reward_id")
+        .eq("user_id", user!.id)
+        .eq("reward_type", "gift");
+      if (error) throw error;
+      return data.map((r) => r.reward_id);
+    },
+    enabled: !!user,
+  });
+
+  // Mark already claimed gifts
+  useEffect(() => {
+    if (claimedGifts) {
+      setGifts((prev) =>
+        prev.map((g) => ({
+          ...g,
+          claimed: claimedGifts.includes(String(g.id)),
+        }))
+      );
+    }
+  }, [claimedGifts]);
+
   const claimGift = async (id: number) => {
     const gift = gifts.find((g) => g.id === id);
     if (!gift || !gift.available || gift.claimed) return;
@@ -54,6 +80,37 @@ export default function Gifts() {
     if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
 
     setLoadingId(id);
+
+    // Check duplicate in DB
+    const { data: existing } = await supabase
+      .from("claimed_rewards")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("reward_type", "gift")
+      .eq("reward_id", String(id))
+      .maybeSingle();
+
+    if (existing) {
+      setLoadingId(null);
+      toast.error("لقد استلمت هذه الهدية مسبقاً!");
+      setGifts((prev) => prev.map((g) => g.id === id ? { ...g, claimed: true } : g));
+      return;
+    }
+
+    // Record claim
+    const { error: claimError } = await supabase.from("claimed_rewards").insert({
+      user_id: user.id,
+      reward_type: "gift",
+      reward_id: String(id),
+    });
+
+    if (claimError) {
+      setLoadingId(null);
+      toast.error("لقد استلمت هذه الهدية مسبقاً!");
+      return;
+    }
+
+    // Add reward transaction
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       type: "reward",
@@ -68,6 +125,7 @@ export default function Gifts() {
     setGifts((prev) => prev.map((g) => g.id === id ? { ...g, claimed: true } : g));
     queryClient.invalidateQueries({ queryKey: ["profile"] });
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["claimed-gifts"] });
     await createNotification(user.id, "هدية جديدة", `تم استلام "${gift.title}" بقيمة $${gift.reward.toFixed(2)} 🎁`, "reward");
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(`تم الحصول على $${gift.reward.toFixed(2)}! 🎉`);
