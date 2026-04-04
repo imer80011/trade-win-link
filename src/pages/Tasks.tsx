@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Clock, DollarSign, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { createNotification } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { getVipLevel } from "@/lib/vipConfig";
@@ -28,7 +28,6 @@ const initialTasks: Task[] = [
   { id: 7, title: "إكمال التحقق من الهوية", reward: 10.0, completed: false, type: "special" },
   { id: 8, title: "أول إيداع بقيمة $100", reward: 15.0, completed: false, type: "special" },
   { id: 9, title: "دعوة 5 أصدقاء", reward: 25.0, completed: false, type: "special" },
-  // VIP Exclusive Tasks
   { id: 10, title: "تداول 5 صفقات يومياً", reward: 8.0, completed: false, type: "vip", minVipLevel: 2 },
   { id: 11, title: "إيداع $500 في يوم واحد", reward: 20.0, completed: false, type: "vip", minVipLevel: 3 },
   { id: 12, title: "تحقيق 10 صفقات رابحة متتالية", reward: 50.0, completed: false, type: "vip", minVipLevel: 4 },
@@ -45,6 +44,33 @@ export default function Tasks() {
   const totalDeposits = Number(profile?.total_deposits ?? 0);
   const vip = getVipLevel(totalDeposits);
 
+  // Load claimed tasks from DB
+  const { data: claimedTasks } = useQuery({
+    queryKey: ["claimed-tasks", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("claimed_rewards")
+        .select("reward_id")
+        .eq("user_id", user!.id)
+        .eq("reward_type", "task");
+      if (error) throw error;
+      return data.map((r) => r.reward_id);
+    },
+    enabled: !!user,
+  });
+
+  // Mark already claimed tasks
+  useEffect(() => {
+    if (claimedTasks) {
+      setTasks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          completed: claimedTasks.includes(String(t.id)),
+        }))
+      );
+    }
+  }, [claimedTasks]);
+
   const completeTask = async (id: number) => {
     const task = tasks.find((t) => t.id === id);
     if (!task || task.completed) return;
@@ -55,6 +81,37 @@ export default function Tasks() {
     if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
 
     setLoadingId(id);
+
+    // Check duplicate in DB
+    const { data: existing } = await supabase
+      .from("claimed_rewards")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("reward_type", "task")
+      .eq("reward_id", String(id))
+      .maybeSingle();
+
+    if (existing) {
+      setLoadingId(null);
+      toast.error("لقد أكملت هذه المهمة مسبقاً!");
+      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: true } : t));
+      return;
+    }
+
+    // Record claim
+    const { error: claimError } = await supabase.from("claimed_rewards").insert({
+      user_id: user.id,
+      reward_type: "task",
+      reward_id: String(id),
+    });
+
+    if (claimError) {
+      setLoadingId(null);
+      toast.error("لقد أكملت هذه المهمة مسبقاً!");
+      return;
+    }
+
+    // Add reward transaction
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       type: "reward",
@@ -69,6 +126,7 @@ export default function Tasks() {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: true } : t));
     queryClient.invalidateQueries({ queryKey: ["profile"] });
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["claimed-tasks"] });
     await createNotification(user.id, "مكافأة مهمة", `تم إكمال "${task.title}" وحصلت على $${task.reward.toFixed(2)}`, "reward");
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
     toast.success(`تم إكمال المهمة! +$${task.reward.toFixed(2)}`);

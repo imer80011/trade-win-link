@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      claimed_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          reward_id: string
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reward_id: string
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reward_id?: string
+          reward_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
