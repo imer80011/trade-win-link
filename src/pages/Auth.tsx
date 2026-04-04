@@ -3,14 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, TrendingUp } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, TrendingUp, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 export default function Auth() {
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +31,10 @@ export default function Auth() {
           email,
           password,
           options: {
-            data: { display_name: displayName },
+            data: {
+              display_name: displayName,
+              referral_code: referralCode || undefined,
+            },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -63,20 +69,35 @@ export default function Auth() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="relative"
-            >
-              <User className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="الاسم الكامل"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="pr-10 bg-card border-border"
-                required={!isLogin}
-              />
-            </motion.div>
+            <>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="relative"
+              >
+                <User className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="الاسم الكامل"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="pr-10 bg-card border-border"
+                  required={!isLogin}
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="relative"
+              >
+                <UserPlus className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="كود الإحالة (اختياري)"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  className="pr-10 bg-card border-border"
+                />
+              </motion.div>
+            </>
           )}
 
           <div className="relative">

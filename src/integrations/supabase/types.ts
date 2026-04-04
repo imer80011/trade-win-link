@@ -95,6 +95,33 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+          reward_amount: number | null
+          reward_paid: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+          reward_amount?: number | null
+          reward_paid?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          reward_amount?: number | null
+          reward_paid?: boolean | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number

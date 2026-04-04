@@ -1,10 +1,32 @@
 import { motion } from "framer-motion";
 import { Copy, Share2, Users, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Referral() {
-  const referralCode = "TRX-A7K9M2";
-  const referralLink = `https://tradexpro.app/ref/${referralCode}`;
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+
+  const { data: referrals } = useQuery({
+    queryKey: ["referrals", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("referrals")
+        .select("*")
+        .eq("referrer_id", user!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const referralCode = profile?.referral_code || "...";
+  const referralLink = `${window.location.origin}/auth?ref=${referralCode}`;
+  const totalReferrals = profile?.total_referrals || 0;
+  const totalRewards = referrals?.reduce((sum, r) => sum + Number(r.reward_amount || 0), 0) || 0;
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -31,7 +53,7 @@ export default function Referral() {
         </div>
         <h2 className="font-bold text-xl">ادعُ أصدقاءك واربح</h2>
         <p className="text-sm text-muted-foreground mt-2">
-          احصل على <span className="text-primary font-bold">10%</span> عمولة من أرباح كل صديق تدعوه
+          احصل على <span className="text-primary font-bold">10%</span> عمولة من كل إيداع يقوم به صديقك
         </p>
       </motion.div>
 
@@ -82,12 +104,12 @@ export default function Referral() {
       >
         <div className="glass-card p-4 text-center">
           <Users className="h-5 w-5 text-primary mx-auto mb-2" />
-          <p className="text-xl font-mono font-bold">12</p>
+          <p className="text-xl font-mono font-bold">{totalReferrals}</p>
           <p className="text-xs text-muted-foreground">إحالات ناجحة</p>
         </div>
         <div className="glass-card p-4 text-center">
           <DollarSign className="h-5 w-5 text-primary mx-auto mb-2" />
-          <p className="text-xl font-mono font-bold gradient-text">$890</p>
+          <p className="text-xl font-mono font-bold gradient-text">${totalRewards.toFixed(0)}</p>
           <p className="text-xs text-muted-foreground">إجمالي العمولات</p>
         </div>
       </motion.div>
@@ -104,7 +126,7 @@ export default function Referral() {
           {[
             { step: "1", text: "شارك رابط الإحالة مع أصدقائك" },
             { step: "2", text: "يسجل صديقك حساب جديد عبر رابطك" },
-            { step: "3", text: "احصل على 10% من أرباح صديقك" },
+            { step: "3", text: "عند كل إيداع يقوم به، تحصل على 10% عمولة تلقائياً" },
           ].map((item) => (
             <div key={item.step} className="flex items-center gap-3">
               <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
