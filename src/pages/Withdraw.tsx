@@ -22,9 +22,7 @@ export default function Withdraw() {
   const vip = getVipLevel(totalDeposits);
 
   const methods = [
-    { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 20, fee: "$1", time: "10-30 دقيقة" },
-    { id: "card", name: "بطاقة ائتمان", icon: CreditCard, min: 50, fee: "3%", time: "1-3 أيام" },
-    { id: "bank", name: "تحويل بنكي", icon: Building2, min: 100, fee: "$5", time: "3-5 أيام" },
+    { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 100, fee: "$1", time: "10-30 دقيقة" },
   ];
 
   const handleWithdraw = async () => {
