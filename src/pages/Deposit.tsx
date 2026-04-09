@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
-import depositQr from "@/assets/deposit-qr.jpg";
+import depositQr from "@/assets/deposit-qr-cropped.png";
 
 const WALLET_ADDRESS = "TDaxqTa4VuGtQZog3toXGDN8thasQcnXot";
 const MIN_DEPOSIT = 50;
