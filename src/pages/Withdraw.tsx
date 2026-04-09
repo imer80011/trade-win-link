@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Wallet, CreditCard, Building2, AlertCircle, Crown } from "lucide-react";
+import { Wallet, AlertCircle, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
