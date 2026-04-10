@@ -84,6 +84,8 @@ export type Database = {
           updated_at: string
           user_id: string
           vip_level: number | null
+          wallet_address: string | null
+          withdraw_password: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -100,6 +102,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           vip_level?: number | null
+          wallet_address?: string | null
+          withdraw_password?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -116,6 +120,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vip_level?: number | null
+          wallet_address?: string | null
+          withdraw_password?: string | null
         }
         Relationships: []
       }
