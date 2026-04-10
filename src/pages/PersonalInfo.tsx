@@ -41,7 +41,11 @@ export default function PersonalInfo() {
     }
 
     setSaving(true);
-    const updates: Record<string, any> = {
+    const updates: {
+      display_name?: string | null;
+      wallet_address?: string | null;
+      withdraw_password?: string;
+    } = {
       display_name: displayName.trim() || null,
       wallet_address: walletAddress.trim() || null,
     };
