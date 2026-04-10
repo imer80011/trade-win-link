@@ -1,25 +1,36 @@
 import { motion } from "framer-motion";
-import { Wallet, AlertCircle, Crown } from "lucide-react";
+import { Wallet, AlertCircle, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/useProfile";
 import { getVipLevel } from "@/lib/vipConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function Withdraw() {
   const [selectedMethod, setSelectedMethod] = useState("usdt");
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
+  const [withdrawPin, setWithdrawPin] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const balance = profile?.balance ?? 0;
 
   const totalDeposits = Number(profile?.total_deposits ?? 0);
   const vip = getVipLevel(totalDeposits);
+  const hasWithdrawPassword = !!profile?.withdraw_password;
+  const linkedWallet = (profile as any)?.wallet_address || "";
+
+  useEffect(() => {
+    if (linkedWallet && !address) {
+      setAddress(linkedWallet);
+    }
+  }, [linkedWallet]);
 
   const methods = [
     { id: "usdt", name: "USDT (TRC20)", icon: Wallet, min: 100, fee: "$1", time: "10-30 دقيقة" },
@@ -43,6 +54,10 @@ export default function Withdraw() {
       toast.error("الرجاء إدخال عنوان المحفظة");
       return;
     }
+    if (hasWithdrawPassword && withdrawPin !== profile?.withdraw_password) {
+      toast.error("كلمة مرور السحب غير صحيحة");
+      return;
+    }
     if (!user) { toast.error("يرجى تسجيل الدخول أولاً"); return; }
     setLoading(true);
     const { error } = await supabase.from("transactions").insert({
@@ -59,6 +74,7 @@ export default function Withdraw() {
     toast.success(`تم إرسال طلب السحب! الوقت المتوقع: ${method.time}`);
     setAmount("");
     setAddress("");
+    setWithdrawPin("");
   };
 
   return (
@@ -144,6 +160,32 @@ export default function Withdraw() {
               className="w-full bg-muted border border-border rounded-lg px-4 py-3 text-foreground font-mono text-sm focus:outline-none focus:border-primary/50 transition-colors"
             />
           </div>
+        )}
+
+        {/* Withdraw Password */}
+        {hasWithdrawPassword && (
+          <div>
+            <label className="text-sm font-semibold mb-2 block">كلمة مرور السحب</label>
+            <div className="relative">
+              <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="password"
+                value={withdrawPin}
+                onChange={(e) => setWithdrawPin(e.target.value)}
+                placeholder="أدخل كلمة مرور السحب"
+                className="w-full bg-muted border border-border rounded-lg pr-10 pl-4 py-3 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+          </div>
+        )}
+
+        {!hasWithdrawPassword && (
+          <button
+            onClick={() => navigate("/personal-info")}
+            className="w-full text-xs text-accent bg-accent/10 border border-accent/20 rounded-lg py-2 hover:bg-accent/20 transition-colors"
+          >
+            ⚠️ لم تقم بتعيين كلمة مرور السحب بعد — اضغط هنا لتعيينها
+          </button>
         )}
 
         <div className="bg-muted rounded-lg p-3 flex items-start gap-2">

@@ -169,8 +169,8 @@ export default function Profile() {
         <SettingRow icon={Bell} label="الإشعارات" toggle checked={notifications}
           onChange={() => { setNotifications(!notifications); toast.success(!notifications ? "تم تفعيل الإشعارات" : "تم إيقاف الإشعارات"); }} />
         <SettingRow icon={Moon} label="الوضع الداكن" toggle checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
-        <SettingRow icon={Lock} label="تغيير كلمة المرور" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
-        <SettingRow icon={Shield} label="التحقق من الهوية" badge="غير مكتمل" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
+        <SettingRow icon={Lock} label="تغيير كلمة المرور" onClick={() => navigate("/change-password")} />
+        <SettingRow icon={Shield} label="المعلومات الشخصية" onClick={() => navigate("/personal-info")} />
         <SettingRow icon={Globe} label="اللغة" value="العربية" onClick={() => toast.info("سيتم إضافة هذه الميزة قريباً")} />
         <AdminLink />
         <SettingRow icon={LogOut} label="تسجيل الخروج" danger onClick={handleSignOut} />
